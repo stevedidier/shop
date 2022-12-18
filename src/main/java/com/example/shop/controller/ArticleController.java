@@ -9,11 +9,17 @@ import com.example.shop.repository.ShopRepos;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
+
+import java.util.List;
+
 @RestController
+@CrossOrigin(origins = "*")
 public class ArticleController {
 
     @Autowired
@@ -26,23 +32,24 @@ public class ArticleController {
     private ArticleRepos articleRepos;
 
     @GetMapping("/articles")
-    public Page<Article> getAllArticles(Pageable pageable) {
-        return articleRepos.findAll(pageable);
+    public ResponseEntity<List<Article>> getAllArticles(@RequestHeader HttpHeaders header, Pageable pageable) {
+        return new ResponseEntity<List<Article>>(articleRepos.findAll(pageable).stream().toList(), HttpStatus.OK);
     }
 
     @GetMapping("/articles/{artId}")
-    public Page<Article> getAllArticlesId(@PathVariable (value = "artId") Long artId, Pageable pageable) {
-        return articleRepos.findById(artId, pageable);
+    public ResponseEntity<Article> getAllArticlesId(@RequestHeader HttpHeaders header, @PathVariable (value = "artId") Long artId, Pageable pageable) {
+        return new ResponseEntity<Article>(articleRepos.findById(artId, pageable).stream().toList().get(0), HttpStatus.OK);
     }
 
     @PostMapping("/articles/categories/{catId}/shops/{shopId}")
-    public Article createArticle(@PathVariable Long catId, @PathVariable Long shopId, @Valid @RequestBody Article article) {
+    public ResponseEntity createArticle(@RequestHeader HttpHeaders header, @PathVariable Long catId, @PathVariable Long shopId, @Valid @RequestBody Article article) {
         return categoryRepos.findById(catId).map(category -> {
             article.setCategory(category);
 
             return shopRepos.findById(shopId).map(shop -> {
                 article.setShop(shop);
-                return articleRepos.save(article);
+                articleRepos.save(article);
+                return ResponseEntity.ok().build();
             }).orElseThrow(() -> new ResourceNotFoundException("CatId " + shopId + " not found"));
 
         }).orElseThrow(() -> new ResourceNotFoundException("CatId " + catId + " not found"));
@@ -50,18 +57,19 @@ public class ArticleController {
     }
 
     @PutMapping("/articles/{articleId}")
-    public Article updateArticle(@PathVariable Long articleId, @Valid @RequestBody Article articleRequest) {
+    public ResponseEntity updateArticle(@RequestHeader HttpHeaders header, @PathVariable Long articleId, @Valid @RequestBody Article articleRequest) {
         return articleRepos.findById(articleId).map(article -> {
             article.setDesignation(articleRequest.getDesignation());
             article.setMarque(articleRequest.getMarque());
             article.setCategory(articleRequest.getCategory());
             article.setqStock(articleRequest.getqStock());
-            return articleRepos.save(article);
+            articleRepos.save(article);
+            return ResponseEntity.ok().build();
         }).orElseThrow(() -> new ResourceNotFoundException("ArticleId " + articleId + " not found"));
     }
 
     @DeleteMapping("/articles/{articleId}")
-    public ResponseEntity<?> deleteArticle(@PathVariable Long articleId) {
+    public ResponseEntity deleteArticle(@RequestHeader HttpHeaders header, @PathVariable Long articleId) {
         return articleRepos.findById(articleId).map(article -> {
             articleRepos.delete(article);
             return ResponseEntity.ok().build();
@@ -69,16 +77,16 @@ public class ArticleController {
     }
 
     @GetMapping("/articles/categories/{catId}")
-    public Page<Article> getAllArticlesByCatId(@PathVariable (value = "catId") Long catId,
+    public Page<Article> getAllArticlesByCatId(@RequestHeader HttpHeaders header, @PathVariable (value = "catId") Long catId,
                                                 Pageable pageable) {
         return articleRepos.findByCategoryId(catId, pageable);
     }
 
 
     @GetMapping("/articles/shops/{shopId}")
-    public Page<Article> getAllArticlesByShopId(@PathVariable (value = "shopId") Long shopId,
+    public ResponseEntity<List<Article>> getAllArticlesByShopId(@RequestHeader HttpHeaders header, @PathVariable (value = "shopId") Long shopId,
                                                Pageable pageable) {
-        return articleRepos.findByShopId(shopId, pageable);
+        return new ResponseEntity<List<Article>>(articleRepos.findByShopId(shopId, pageable).stream().toList(), HttpStatus.OK);
     }
 
 

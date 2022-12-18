@@ -14,6 +14,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @RestController
+@CrossOrigin(origins = "*")
 public class ShopController {
 
     @Autowired
@@ -33,13 +36,16 @@ public class ShopController {
     @Autowired
     private HoraireRepos horaireRepos;
 
+
+
     @GetMapping("/shops")
-    public Page<Shop> getAllShops(Pageable pageable) {
-        return shopRepos.findAll(pageable);
+    public ResponseEntity<List<Shop>> getAllShops(@RequestHeader HttpHeaders header, Pageable pageable ) {
+        //List<Shop> shops =  shopRepos.findById(shopId, pageable).stream().toList();
+        return new ResponseEntity<List<Shop>>(shopRepos.findAll(pageable).stream().toList(), HttpStatus.OK);
     }
 
     @GetMapping("/shops/{shopId}")
-    public Page<Shop> getAllArticlesById(@PathVariable(value = "shopId") Long shopId, Pageable pageable) {
+    public ResponseEntity<Shop> getAllArticlesById(@RequestHeader HttpHeaders header, @PathVariable(value = "shopId") Long shopId, Pageable pageable) {
         // les variable shops, article et horaire  sont immutables
         List<Shop> shops =  shopRepos.findById(shopId, pageable).stream().toList();
 
@@ -59,8 +65,8 @@ public class ShopController {
         shop1.setHoraires(horaires);
 
 
-        List<Shop> shops1 = new ArrayList<Shop>();
-        shops1.add(shop1);
+        //List<Shop> shops1 = new ArrayList<Shop>();
+        //shops1.add(shop1);
 
         // fin du clonage
 
@@ -68,33 +74,36 @@ public class ShopController {
 
         // Convertir la list shops1 en Page<Shop>
 
-        final Page<Shop> shopPage = new PageImpl<>(shops1);
+        //final Page<Shop> shopPage = new PageImpl<>(shops1);
         //shop.setArticles(articles);
 
 
-        return shopPage;
+        return new ResponseEntity<Shop>(shop1 , HttpStatus.OK);
     }
 
 
     @PostMapping("/shops")
-    public Shop createShop(@Valid @RequestBody Shop shop) {
-        return shopRepos.save(shop);
+    public ResponseEntity createShop(@Valid @RequestBody Shop shop,  @RequestHeader HttpHeaders header) {
+         shopRepos.save(shop);
+         return ResponseEntity.ok().build();
+
     }
 
     @PutMapping("/shops/{shopId}")
-    public Shop updateShop(@PathVariable Long shopId, @Valid @RequestBody Shop shopRequest) {
+    public ResponseEntity updateShop(@PathVariable Long shopId, @Valid @RequestBody Shop shopRequest, @RequestHeader HttpHeaders header) {
         String nom = shopRequest.getNom();
         boolean isVacation = shopRequest.getIsVacation();
 
         return shopRepos.findById(shopId).map(shop -> {
             shop.setNom(nom);
             shop.setIsVacation(isVacation);
-            return shopRepos.save(shop);
+             shopRepos.save(shop);
+            return ResponseEntity.ok().build();
         }).orElseThrow(() -> new ResourceNotFoundException("ShopId " + shopId + " not found"));
     }
 
     @DeleteMapping("/shops/{shopId}")
-    public ResponseEntity<?> deleteShop(@PathVariable Long shopId) {
+    public ResponseEntity deleteShop(@PathVariable Long shopId, @RequestHeader HttpHeaders header) {
         return shopRepos.findById(shopId).map(shop -> {
             shopRepos.delete(shop);
             return ResponseEntity.ok().build();
