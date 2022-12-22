@@ -7,8 +7,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 public interface HoraireRepos extends JpaRepository<Horaire, Long> {
-    Page<Horaire> findByShopId(Long shopId, Pageable pageable);
-    Page<Horaire> findById(Long HoraireId, Pageable pageable);
+    List<Horaire> findByShopId(Long shopId);
+
+    List<Horaire> findByShopIdAndWeekNum(Long shopId, int weekNum);
 }

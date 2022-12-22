@@ -8,6 +8,7 @@ import com.example.shop.repository.ArticleRepos;
 import com.example.shop.repository.CategoryRepos;
 import com.example.shop.repository.HoraireRepos;
 import com.example.shop.repository.ShopRepos;
+import com.example.shop.service.HoraireService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -23,55 +24,51 @@ import java.util.List;
 @CrossOrigin(origins = "*")
 public class HoraireController {
 
-
     @Autowired
-    private HoraireRepos horaireRepos;
-
-    @Autowired
-    private ShopRepos shopRepos;
+    private HoraireService horaireService;
 
     @GetMapping("/horaires")
     public ResponseEntity<List<Horaire>> getAllHoraires(@RequestHeader HttpHeaders header, Pageable pageable) {
-        return new ResponseEntity<List<Horaire>>(horaireRepos.findAll(pageable).stream().toList(), HttpStatus.OK);
+        return new ResponseEntity<List<Horaire>>(horaireService.getAllHoraires(), HttpStatus.OK);
     }
 
     @GetMapping("/horaires/{horaireId}")
-    public ResponseEntity<Horaire> getAllHoraireById(@RequestHeader HttpHeaders header, @PathVariable(value = "horaireId") Long horaireId, Pageable pageable) {
-        return new ResponseEntity<Horaire>(horaireRepos.findById(horaireId, pageable).stream().toList().get(0), HttpStatus.OK);
+    public ResponseEntity<Horaire> getHorairesById(@RequestHeader HttpHeaders header, @PathVariable(value = "horaireId") Long horaireId, Pageable pageable) {
+        return new ResponseEntity<Horaire>(horaireService.getHorairesById(horaireId), HttpStatus.OK);
     }
 
     @GetMapping("/horaires/shops/{shopId}")
     public ResponseEntity<List<Horaire>> getAllHoraireByShopId(@RequestHeader HttpHeaders header, @PathVariable (value = "shopId") Long shopId,
                                                Pageable pageable) {
-        return new ResponseEntity<List<Horaire>>(horaireRepos.findByShopId(shopId, pageable).stream().toList(), HttpStatus.OK);
+        return new ResponseEntity<List<Horaire>>(horaireService.getHorairesByShopId(shopId), HttpStatus.OK);
+    }
+
+    @GetMapping("/horaires/shops/{shopId}/{numWeek}")
+    public ResponseEntity<List<Horaire>> getHoraireByShopIdByNumWeek(@RequestHeader HttpHeaders header, @PathVariable (value = "shopId") Long shopId, @PathVariable (value = "numWeek") Integer numWeek,
+                                                               Pageable pageable) {
+        return new ResponseEntity<List<Horaire>>(horaireService.getHoraireByShopIdByNumWeek(shopId, numWeek), HttpStatus.OK);
     }
 
     @PostMapping("/horaires/shops/{shopId}")
     public ResponseEntity createHoraire(@RequestHeader HttpHeaders header, @PathVariable Long shopId, @Valid @RequestBody Horaire horaire) {
-        return shopRepos.findById(shopId).map(shop -> {
-            horaire.setShop(shop);
-            horaireRepos.save(horaire);
-            return ResponseEntity.ok().build();
-        }).orElseThrow(() -> new ResourceNotFoundException("ShopId " + shopId + " not found"));
+
+        horaireService.saveOrUpdate(horaire, shopId);
+        return ResponseEntity.ok().build();
 
     }
 
     @PutMapping("/horaires/{horaireId}")
     public ResponseEntity updateHoraire(@RequestHeader HttpHeaders header, @PathVariable Long horaireId, @Valid @RequestBody Horaire horaireRequest) {
-        return horaireRepos.findById(horaireId).map(horaire -> {
-            horaire.setBeginTime(horaireRequest.getBeginTime());
-            horaire.setEndTime(horaireRequest.getEndTime());
 
-            horaireRepos.save(horaire);
-            return ResponseEntity.ok().build();
-        }).orElseThrow(() -> new ResourceNotFoundException("HoraireId " + horaireId + " not found"));
+        horaireService.update(horaireRequest, horaireId);
+        return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/horaires/{horaireId}")
     public ResponseEntity deleteHoraire(@RequestHeader HttpHeaders header, @PathVariable Long horaireId) {
-        return horaireRepos.findById(horaireId).map(horaire -> {
-            horaireRepos.delete(horaire);
-            return ResponseEntity.ok().build();
-        }).orElseThrow(() -> new ResourceNotFoundException("HoraireId " + horaireId + " not found"));
+
+        horaireService.delete(horaireId);
+
+        return ResponseEntity.ok().build();
     }
 }

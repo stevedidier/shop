@@ -12,6 +12,10 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.sql.Blob;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
 
 @Data
 @Entity
@@ -42,15 +46,35 @@ public class Article extends AuditModel{
     @NotNull
     private double qStock;
 
-    @ManyToOne(fetch = FetchType.EAGER, optional = false)
-    @JoinColumn(name = "category_id", nullable = false)
-    @OnDelete(action = OnDeleteAction.CASCADE)
-    private Category category;
+    @ManyToMany(fetch = FetchType.LAZY,
+            cascade = {
+                    CascadeType.PERSIST,
+                    CascadeType.MERGE
+            })
+    @JoinTable(name = "category_articles",
+            joinColumns = { @JoinColumn(name = "article_id") },
+            inverseJoinColumns = { @JoinColumn(name = "category_id") })
 
-    @ManyToOne(fetch = FetchType.EAGER, optional = false)
-    @JoinColumn(name = "shop_id", nullable = false)
-    @OnDelete(action = OnDeleteAction.CASCADE)
-    private Shop shop;
+    @JsonIgnore
+    private Set<Category> categories = new HashSet<>();
+
+    @Transient
+    private List<Category> categoryList = new ArrayList<>();
+
+    @ManyToMany(fetch = FetchType.LAZY,
+            cascade = {
+                    CascadeType.PERSIST,
+                    CascadeType.MERGE
+            })
+    @JoinTable(name = "shop_articles",
+            joinColumns = { @JoinColumn(name = "article_id") },
+            inverseJoinColumns = { @JoinColumn(name = "shop_id") })
+
+    @JsonIgnore
+    private Set<Shop> shops = new HashSet<>();
+
+    @Transient
+    private Shop shop ;
 
     public Long getId() {
         return id;
@@ -90,11 +114,5 @@ public class Article extends AuditModel{
         this.qStock = qStock;
     }
 
-    public Category getCategory() {
-        return category;
-    }
 
-    public void setCategory(Category category) {
-        this.category = category;
-    }
 }

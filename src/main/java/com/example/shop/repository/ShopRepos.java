@@ -8,8 +8,14 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 public interface ShopRepos extends JpaRepository<Shop, Long> {
 
-    Page<Shop> findById(Long shopId, Pageable pageable);
+    List<Shop> findShopsByShopArticlesId(Long articleId);
+
+
+
+
 }
